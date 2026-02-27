@@ -1,0 +1,36 @@
+name: Check Flight Prices
+
+on:
+  schedule:
+    # Runs at 08:00 and 20:00 UTC (twice daily)
+    - cron: '0 8 * * *'
+    - cron: '0 20 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  check-flights:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check flights in batches
+        env:
+          APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          for i in 1 2 3 4 5; do
+            echo "Processing batch $i..."
+            HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+              -X POST "$APP_URL/api/cron/check-flights?batch=$i" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              -H "Content-Type: application/json" \
+              --max-time 30)
+
+            echo "Batch $i response ($HTTP_CODE):"
+            cat /tmp/response.json
+            echo ""
+
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "Warning: Batch $i returned $HTTP_CODE"
+            fi
+
+            sleep 2
+          done
