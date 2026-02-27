@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { trackers, flightResults, priceHistory } from "@/lib/db/schema";
+import { trackers } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { searchFlights } from "@/lib/amadeus";
-import { sendFlightResults } from "@/lib/email";
+import { checkSingleTracker } from "@/lib/check-tracker";
 
 const TRACKERS_PER_BATCH = 3;
 
@@ -23,14 +22,15 @@ export async function POST(request: NextRequest) {
   const offset = (batch - 1) * TRACKERS_PER_BATCH;
 
   try {
-    // Get active trackers that haven't expired
+    // Get active trackers that haven't expired (within 7-day window)
     const activeTrackers = await db
       .select()
       .from(trackers)
       .where(
         and(
           eq(trackers.isActive, true),
-          sql`${trackers.departEnd} >= CURRENT_DATE`
+          sql`${trackers.departEnd} >= CURRENT_DATE`,
+          sql`${trackers.expiresAt} > NOW()`
         )
       )
       .limit(TRACKERS_PER_BATCH)
@@ -47,87 +47,8 @@ export async function POST(request: NextRequest) {
 
     for (const tracker of activeTrackers) {
       try {
-        // Search flights via Amadeus
-        const flights = await searchFlights({
-          origin: tracker.origin,
-          destination: tracker.destination,
-          departStart: tracker.departStart,
-          departEnd: tracker.departEnd,
-          returnStart: tracker.returnStart,
-          returnEnd: tracker.returnEnd,
-          adults: tracker.adults,
-          maxResults: 5,
-        });
-
-        if (flights.length === 0) {
-          results.push({
-            trackerId: tracker.id,
-            status: "no_flights_found",
-          });
-          continue;
-        }
-
-        // Store flight results
-        await db.insert(flightResults).values(
-          flights.map((flight) => ({
-            trackerId: tracker.id,
-            departureDate: flight.departureDate,
-            returnDate: flight.returnDate,
-            airline: flight.airline,
-            price: flight.price.toString(),
-            currency: flight.currency,
-            bookingLink: flight.bookingLink,
-            outboundSegments: flight.outboundSegments,
-            returnSegments: flight.returnSegments,
-          }))
-        );
-
-        // Store price history
-        const lowestPrice = flights[0].price;
-        await db.insert(priceHistory).values({
-          trackerId: tracker.id,
-          lowestPrice: lowestPrice.toString(),
-          currency: flights[0].currency,
-        });
-
-        // Get previous lowest price for comparison
-        const previousRecords = await db
-          .select({ lowestPrice: priceHistory.lowestPrice })
-          .from(priceHistory)
-          .where(eq(priceHistory.trackerId, tracker.id))
-          .orderBy(sql`${priceHistory.checkedAt} DESC`)
-          .limit(2);
-
-        const previousLowest =
-          previousRecords.length > 1
-            ? parseFloat(previousRecords[1].lowestPrice)
-            : null;
-
-        // Send email with results
-        await sendFlightResults({
-          to: tracker.email,
-          origin: tracker.origin,
-          destination: tracker.destination,
-          flights,
-          previousLowest,
-          unsubscribeToken: tracker.unsubscribeToken,
-        });
-
-        // Update tracker timestamps
-        await db
-          .update(trackers)
-          .set({
-            lastCheckedAt: new Date(),
-            lastEmailedAt: new Date(),
-          })
-          .where(eq(trackers.id, tracker.id));
-
-        results.push({
-          trackerId: tracker.id,
-          status: "success",
-          flightsFound: flights.length,
-          lowestPrice: lowestPrice,
-        });
+        const result = await checkSingleTracker(tracker);
+        results.push(result);
       } catch (error) {
         console.error(`Failed to process tracker ${tracker.id}:`, error);
         results.push({

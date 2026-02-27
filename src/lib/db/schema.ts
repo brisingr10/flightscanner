@@ -30,6 +30,7 @@ export const trackers = pgTable(
       .notNull()
       .unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
     lastCheckedAt: timestamp("last_checked_at"),
     lastEmailedAt: timestamp("last_emailed_at"),
   },

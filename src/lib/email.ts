@@ -80,9 +80,9 @@ export async function sendConfirmationEmail(params: {
           <tr><td style="padding: 8px; color: #666;">노선</td><td style="padding: 8px; font-weight: bold;">${origin} → ${destination}</td></tr>
           <tr><td style="padding: 8px; color: #666;">출발 날짜</td><td style="padding: 8px;">${departRange}</td></tr>
           <tr><td style="padding: 8px; color: #666;">귀국 날짜</td><td style="padding: 8px;">${returnRange}</td></tr>
-          <tr><td style="padding: 8px; color: #666;">확인 주기</td><td style="padding: 8px;">하루 2회</td></tr>
+          <tr><td style="padding: 8px; color: #666;">추적 기간</td><td style="padding: 8px;">1주일 (하루 2회, 총 14회)</td></tr>
         </table>
-        <p>첫 번째 가격 업데이트는 12시간 이내에 도착합니다.</p>
+        <p>첫 번째 가격 업데이트가 곧 도착합니다.</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
         <p style="color: #999; font-size: 12px;">
           <a href="${appUrl}/unsubscribe/${unsubscribeToken}" style="color: #999;">구독 해지</a>

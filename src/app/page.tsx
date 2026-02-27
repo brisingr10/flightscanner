@@ -9,7 +9,7 @@ export default function Home() {
             FlightScanner
           </h1>
           <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto">
-            최저가 항공권 TOP 5를 하루 2회 이메일로 받아보세요.
+            최저가 항공권 TOP 5를 하루 2회, 1주일간 이메일로 받아보세요.
             설정만 하면 알아서 추적합니다.
           </p>
         </div>
@@ -32,7 +32,7 @@ export default function Home() {
               가격 모니터링
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              실제 항공사 데이터로 하루 2회 자동 확인
+              1주일간 하루 2회 (총 14회) 자동 확인
             </p>
           </div>
           <div>

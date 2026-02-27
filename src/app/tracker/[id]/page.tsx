@@ -61,8 +61,8 @@ export default async function TrackerPage({
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-500">확인 주기</span>
-              <span>하루 2회</span>
+              <span className="text-zinc-500">추적 기간</span>
+              <span>1주일 (하루 2회, 총 14회)</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-zinc-500">상태</span>
@@ -70,9 +70,9 @@ export default async function TrackerPage({
             </div>
             <hr className="my-4" />
             <p className="text-xs text-zinc-400">
-              확인 이메일이 발송되었습니다. 첫 번째 가격 업데이트는
-              12시간 이내에 도착합니다. 메일이 보이지 않으면
-              스팸 폴더를 확인해주세요.
+              확인 이메일이 발송되었습니다. 첫 번째 가격 업데이트가
+              곧 도착합니다. 메일이 보이지 않으면 스팸 폴더를
+              확인해주세요.
             </p>
           </CardContent>
         </Card>
