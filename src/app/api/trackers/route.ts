@@ -57,16 +57,14 @@ export async function POST(request: NextRequest) {
       checkSingleTracker(tracker),
     ]);
 
-    const errors = results
-      .map((r, i) =>
-        r.status === "rejected"
-          ? { task: i === 0 ? "confirmEmail" : "flightCheck", error: String(r.reason) }
-          : null
-      )
-      .filter(Boolean);
+    const debug = results.map((r, i) => {
+      const task = i === 0 ? "confirmEmail" : "flightCheck";
+      if (r.status === "rejected") return { task, error: String(r.reason) };
+      return { task, value: r.value };
+    });
 
     return NextResponse.json(
-      { id: tracker.id, message: "Tracker created successfully", ...(errors.length > 0 && { errors }) },
+      { id: tracker.id, message: "Tracker created successfully", debug },
       { status: 201 }
     );
   } catch (error) {
