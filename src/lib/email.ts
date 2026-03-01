@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { FlightResultsEmail } from "@/emails/flight-results";
 import type { FlightOffer } from "./amadeus";
+import { formatPriceWithKRW } from "./format";
 
 let _resend: Resend | null = null;
 
@@ -47,9 +48,10 @@ export async function sendFlightResults(params: {
       ? Math.round(((previousLowest - currentLowest) / previousLowest) * 100)
       : null;
 
+  const priceStr = formatPriceWithKRW(currentLowest);
   const subject = priceDropPercent
-    ? `${priceDropPercent}% 가격 하락! ${origin} → ${destination} $${currentLowest}부터`
-    : `항공권 업데이트: ${origin} → ${destination} $${currentLowest}부터`;
+    ? `${priceDropPercent}% 가격 하락! ${origin} → ${destination} ${priceStr}부터`
+    : `항공권 업데이트: ${origin} → ${destination} ${priceStr}부터`;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const unsubscribeUrl = `${appUrl}/unsubscribe/${unsubscribeToken}`;

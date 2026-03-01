@@ -11,6 +11,7 @@ import {
   Column,
 } from "@react-email/components";
 import type { FlightOffer } from "@/lib/amadeus";
+import { formatPriceWithKRW, formatJourneyDuration } from "@/lib/format";
 
 interface FlightResultsEmailProps {
   origin: string;
@@ -45,8 +46,9 @@ export function FlightResultsEmail({
           {priceDropped && (
             <Section style={priceDropBanner}>
               <Text style={priceDropText}>
-                가격 {priceDropPercent}% 하락! ${previousLowest} → $
-                {currentLowest}
+                가격 {priceDropPercent}% 하락!{" "}
+                {formatPriceWithKRW(previousLowest)} →{" "}
+                {formatPriceWithKRW(currentLowest)}
               </Text>
             </Section>
           )}
@@ -61,7 +63,7 @@ export function FlightResultsEmail({
                 </Column>
                 <Column style={detailsCol}>
                   <Text style={price}>
-                    ${flight.price} {flight.currency}
+                    {formatPriceWithKRW(flight.price)}
                   </Text>
                   <Text style={airline}>{flight.airline}</Text>
                   <Text style={dates}>
@@ -77,6 +79,11 @@ export function FlightResultsEmail({
                       ? "직항"
                       : `경유 ${flight.returnSegments.length - 1}회`}{" "}
                     (오는편)
+                  </Text>
+                  <Text style={duration}>
+                    가는편 {formatJourneyDuration(flight.outboundSegments)}
+                    {flight.returnSegments.length > 0 &&
+                      ` · 오는편 ${formatJourneyDuration(flight.returnSegments)}`}
                   </Text>
                 </Column>
                 <Column style={actionCol}>
@@ -182,6 +189,12 @@ const dates = {
 const stops = {
   fontSize: "12px",
   color: "#9ca3af",
+  margin: "0 0 2px",
+};
+
+const duration = {
+  fontSize: "12px",
+  color: "#6b7280",
   margin: "0",
 };
 
