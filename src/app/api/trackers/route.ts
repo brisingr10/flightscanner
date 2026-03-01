@@ -8,6 +8,8 @@ import { randomUUID } from "crypto";
 
 const TRACKER_DURATION_DAYS = 7;
 
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -42,20 +44,18 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // Send confirmation email (fire and forget)
-    sendConfirmationEmail({
-      to: data.email,
-      origin: data.origin,
-      destination: data.destination,
-      departRange: `${data.departStart} ~ ${data.departEnd}`,
-      returnRange: `${data.returnStart} ~ ${data.returnEnd}`,
-      unsubscribeToken,
-    }).catch((err) => console.error("Confirmation email failed:", err));
-
-    // Trigger immediate first flight check (fire and forget, don't block response)
-    checkSingleTracker(tracker).catch((err) =>
-      console.error("Initial flight check failed:", err)
-    );
+    // Run confirmation email and first flight check in parallel
+    await Promise.allSettled([
+      sendConfirmationEmail({
+        to: data.email,
+        origin: data.origin,
+        destination: data.destination,
+        departRange: `${data.departStart} ~ ${data.departEnd}`,
+        returnRange: `${data.returnStart} ~ ${data.returnEnd}`,
+        unsubscribeToken,
+      }),
+      checkSingleTracker(tracker),
+    ]);
 
     return NextResponse.json(
       { id: tracker.id, message: "Tracker created successfully" },
