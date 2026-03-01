@@ -61,12 +61,10 @@ export async function searchFlights(params: {
     }
   }
 
-  // Search in batches to avoid rate limits
-  const allOffers: FlightOffer[] = [];
-
-  for (const { depart, ret } of datePairs) {
-    try {
-      const response = await getAmadeus().shopping.flightOffersSearch.get({
+  // Search all date combinations in parallel for speed
+  const results = await Promise.allSettled(
+    datePairs.map(({ depart, ret }) =>
+      getAmadeus().shopping.flightOffersSearch.get({
         originLocationCode: origin,
         destinationLocationCode: destination,
         departureDate: depart,
@@ -75,22 +73,19 @@ export async function searchFlights(params: {
         max: "3",
         currencyCode: "USD",
         nonStop: "false",
-      });
+      })
+    )
+  );
 
+  const allOffers: FlightOffer[] = [];
+  for (const result of results) {
+    if (result.status === "fulfilled") {
       const offers = parseFlightOffers(
-        response.data,
-        response.result?.dictionaries
+        result.value.data,
+        result.value.result?.dictionaries
       );
       allOffers.push(...offers);
-    } catch (error) {
-      console.error(
-        `Amadeus search failed for ${depart} -> ${ret}:`,
-        error instanceof Error ? error.message : error
-      );
     }
-
-    // Small delay between API calls to respect rate limits
-    await delay(200);
   }
 
   // Sort by price and return top N
