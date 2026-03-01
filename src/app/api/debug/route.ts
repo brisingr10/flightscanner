@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import Amadeus from "amadeus";
 
 export async function GET() {
-  const debug: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const debug: any = {};
 
-  // Check env vars
   debug.hasClientId = !!process.env.AMADEUS_CLIENT_ID;
   debug.hasClientSecret = !!process.env.AMADEUS_CLIENT_SECRET;
   debug.clientIdLength = process.env.AMADEUS_CLIENT_ID?.length ?? 0;
@@ -15,9 +15,6 @@ export async function GET() {
       clientSecret: process.env.AMADEUS_CLIENT_SECRET!,
     });
 
-    debug.amadeusCreated = true;
-
-    // Test a single search
     const response = await amadeus.shopping.flightOffersSearch.get({
       originLocationCode: "ICN",
       destinationLocationCode: "NRT",
@@ -31,18 +28,17 @@ export async function GET() {
 
     debug.searchSuccess = true;
     debug.dataLength = response.data?.length ?? 0;
-    debug.statusCode = response.statusCode;
-
     if (response.data?.[0]) {
-      const offer = response.data[0] as Record<string, unknown>;
-      debug.samplePrice = (offer.price as Record<string, unknown>)?.total;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      debug.samplePrice = (response.data[0] as any).price?.total;
     }
   } catch (err: unknown) {
     debug.searchSuccess = false;
-    const e = err as Record<string, unknown>;
-    debug.errorCode = (e.response as Record<string, unknown>)?.statusCode ?? (e as Record<string, string>).code;
-    debug.errorMessage = String(e.description ?? (e as Error).message);
-    debug.errorBody = (e.response as Record<string, unknown>)?.body;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const e = err as any;
+    debug.errorCode = e?.response?.statusCode ?? e?.code;
+    debug.errorMessage = e?.description ?? e?.message;
+    debug.errorBody = e?.response?.body;
   }
 
   return NextResponse.json(debug);
