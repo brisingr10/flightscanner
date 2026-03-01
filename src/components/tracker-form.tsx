@@ -83,7 +83,7 @@ export function TrackerForm() {
       <CardHeader>
         <CardTitle className="text-2xl">항공권 가격 추적</CardTitle>
         <p className="text-muted-foreground text-sm">
-          1주일간 하루 2회 (총 14회), 최저가 항공권 TOP 5를 이메일로 받아보세요.
+          1주일간 하루 1회 (총 7회), 최저가 항공권 TOP 5를 이메일로 받아보세요.
         </p>
       </CardHeader>
       <CardContent>
@@ -143,7 +143,7 @@ export function TrackerForm() {
               required
             />
             <p className="text-xs text-muted-foreground">
-              이 이메일로 1주일간 하루 2회 (총 14회) 최저가 항공권 정보를 보내드립니다.
+              이 이메일로 1주일간 하루 1회 (총 7회) 최저가 항공권 정보를 보내드립니다.
             </p>
           </div>
 

@@ -7,6 +7,15 @@ import { sendFlightResults } from "@/lib/email";
 type Tracker = typeof trackers.$inferSelect;
 
 export async function checkSingleTracker(tracker: Tracker) {
+  // Guard: skip inactive or expired trackers
+  if (!tracker.isActive) {
+    return { trackerId: tracker.id, status: "inactive" as const };
+  }
+
+  if (tracker.expiresAt && new Date() > new Date(tracker.expiresAt)) {
+    return { trackerId: tracker.id, status: "expired" as const };
+  }
+
   const flights = await searchFlights({
     origin: tracker.origin,
     destination: tracker.destination,

@@ -3,6 +3,17 @@ import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+// GET: redirect to the unsubscribe confirmation page.
+// Needed for email clients that follow List-Unsubscribe links via GET.
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  return NextResponse.redirect(`${appUrl}/unsubscribe/${token}`);
+}
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string }> }

@@ -62,7 +62,7 @@ export default async function TrackerPage({
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-zinc-500">추적 기간</span>
-              <span>1주일 (하루 2회, 총 14회)</span>
+              <span>1주일 (하루 1회, 총 7회)</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-zinc-500">상태</span>

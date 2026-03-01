@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FlightScanner - 항공권 가격 추적",
   description:
-    "하루 2회, 최저가 항공권 TOP 5를 이메일로 받아보세요. 무료 항공권 가격 추적 서비스.",
+    "하루 1회, 최저가 항공권 TOP 5를 이메일로 받아보세요. 무료 항공권 가격 추적 서비스.",
 };
 
 export default function RootLayout({
