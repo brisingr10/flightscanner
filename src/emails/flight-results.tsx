@@ -11,7 +11,7 @@ import {
   Column,
 } from "@react-email/components";
 import type { FlightOffer } from "@/lib/amadeus";
-import { formatPriceWithKRW, formatJourneyDuration } from "@/lib/format";
+import { formatPriceWithKRW, formatJourneyDuration, formatTime } from "@/lib/format";
 
 interface FlightResultsEmailProps {
   origin: string;
@@ -67,8 +67,10 @@ export function FlightResultsEmail({
                   </Text>
                   <Text style={airline}>{flight.airline}</Text>
                   <Text style={dates}>
-                    출발: {flight.departureDate} · 귀국:{" "}
-                    {flight.returnDate}
+                    출발: {flight.departureDate}{" "}
+                    {formatTime(flight.outboundSegments[0]?.departure.at ?? "")}
+                    {" · "}귀국: {flight.returnDate}{" "}
+                    {formatTime(flight.returnSegments[0]?.departure.at ?? "")}
                   </Text>
                   <Text style={stops}>
                     {flight.outboundSegments.length === 1

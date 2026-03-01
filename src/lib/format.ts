@@ -15,20 +15,41 @@ export function formatPriceWithKRW(usdPrice: number): string {
 }
 
 /**
- * Calculate journey duration from first departure to last arrival.
- * Returns formatted string like "2시간 30분".
+ * Parse ISO 8601 duration string (e.g. "PT11H50M") and return total minutes.
+ */
+function parseISO8601Duration(iso: string): number {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return 0;
+  const hours = parseInt(match[1] || "0", 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  return hours * 60 + minutes;
+}
+
+/**
+ * Sum segment durations from Amadeus ISO 8601 duration fields.
+ * Returns formatted string like "11시간 50분".
  */
 export function formatJourneyDuration(segments: FlightSegment[]): string {
   if (segments.length === 0) return "";
 
-  const departureTime = new Date(segments[0].departure.at).getTime();
-  const arrivalTime = new Date(segments[segments.length - 1].arrival.at).getTime();
-  const diffMinutes = Math.round((arrivalTime - departureTime) / (1000 * 60));
+  const totalMinutes = segments.reduce(
+    (sum, seg) => sum + parseISO8601Duration(seg.duration),
+    0
+  );
 
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
 
   if (hours === 0) return `${minutes}분`;
   if (minutes === 0) return `${hours}시간`;
   return `${hours}시간 ${minutes}분`;
+}
+
+/**
+ * Extract HH:MM time from an ISO datetime string (e.g. "2026-05-29T18:30:00").
+ */
+export function formatTime(isoDatetime: string): string {
+  const timePart = isoDatetime.split("T")[1];
+  if (!timePart) return "";
+  return timePart.slice(0, 5);
 }
