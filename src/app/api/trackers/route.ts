@@ -1,4 +1,4 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
 import { createTrackerSchema } from "@/lib/validators";
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // Send confirmation email (don't block response on it)
+    // Send confirmation email (fire and forget)
     sendConfirmationEmail({
       to: data.email,
       origin: data.origin,
@@ -52,14 +52,10 @@ export async function POST(request: NextRequest) {
       unsubscribeToken,
     }).catch((err) => console.error("Confirmation email failed:", err));
 
-    // Trigger first flight check after response in a runtime-safe way.
-    after(async () => {
-      try {
-        await checkSingleTracker(tracker);
-      } catch (err) {
-        console.error("Initial flight check failed:", err);
-      }
-    });
+    // Trigger immediate first flight check (fire and forget, don't block response)
+    checkSingleTracker(tracker).catch((err) =>
+      console.error("Initial flight check failed:", err)
+    );
 
     return NextResponse.json(
       { id: tracker.id, message: "Tracker created successfully" },
