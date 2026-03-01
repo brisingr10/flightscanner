@@ -5,8 +5,8 @@ let _amadeus: Amadeus | null = null;
 function getAmadeus() {
   if (!_amadeus) {
     _amadeus = new Amadeus({
-      clientId: process.env.AMADEUS_CLIENT_ID!,
-      clientSecret: process.env.AMADEUS_CLIENT_SECRET!,
+      clientId: process.env.AMADEUS_CLIENT_ID!.trim(),
+      clientSecret: process.env.AMADEUS_CLIENT_SECRET!.trim(),
     });
   }
   return _amadeus;

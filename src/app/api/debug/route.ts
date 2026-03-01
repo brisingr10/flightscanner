@@ -8,11 +8,14 @@ export async function GET() {
   debug.hasClientId = !!process.env.AMADEUS_CLIENT_ID;
   debug.hasClientSecret = !!process.env.AMADEUS_CLIENT_SECRET;
   debug.clientIdLength = process.env.AMADEUS_CLIENT_ID?.length ?? 0;
+  debug.clientSecretLength = process.env.AMADEUS_CLIENT_SECRET?.length ?? 0;
+  debug.clientIdEndsWithSpace = process.env.AMADEUS_CLIENT_ID?.endsWith(" ") || process.env.AMADEUS_CLIENT_ID?.endsWith("\n");
+  debug.clientSecretEndsWithSpace = process.env.AMADEUS_CLIENT_SECRET?.endsWith(" ") || process.env.AMADEUS_CLIENT_SECRET?.endsWith("\n");
 
   try {
     const amadeus = new Amadeus({
-      clientId: process.env.AMADEUS_CLIENT_ID!,
-      clientSecret: process.env.AMADEUS_CLIENT_SECRET!,
+      clientId: process.env.AMADEUS_CLIENT_ID!.trim(),
+      clientSecret: process.env.AMADEUS_CLIENT_SECRET!.trim(),
     });
 
     const response = await amadeus.shopping.flightOffersSearch.get({
