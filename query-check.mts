@@ -8,12 +8,14 @@ const sql = neon(process.env.DATABASE_URL!);
 const rows = await sql`
   SELECT id, origin, destination, last_checked_at, last_emailed_at, created_at
   FROM trackers
-  WHERE id = 'a5910d71-4073-4348-b3ba-34cd61cb4282'
+  ORDER BY created_at DESC
+  LIMIT 3
 `;
 
 for (const r of rows) {
-  console.log(`${r.origin} → ${r.destination}`);
-  console.log(`Created:      ${r.created_at}`);
-  console.log(`Last checked: ${r.last_checked_at ?? 'never'}`);
-  console.log(`Last emailed: ${r.last_emailed_at ?? 'never'}`);
+  console.log(`${r.origin} → ${r.destination} (${r.id.slice(0,8)})`);
+  console.log(`  Created:      ${r.created_at}`);
+  console.log(`  Last checked: ${r.last_checked_at ?? 'never'}`);
+  console.log(`  Last emailed: ${r.last_emailed_at ?? 'never'}`);
+  console.log('');
 }
