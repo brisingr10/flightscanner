@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Run confirmation email and first flight check in parallel
-    const results = await Promise.allSettled([
+    await Promise.allSettled([
       sendConfirmationEmail({
         to: data.email,
         origin: data.origin,
@@ -57,14 +57,8 @@ export async function POST(request: NextRequest) {
       checkSingleTracker(tracker),
     ]);
 
-    const debug = results.map((r, i) => {
-      const task = i === 0 ? "confirmEmail" : "flightCheck";
-      if (r.status === "rejected") return { task, error: String(r.reason) };
-      return { task, value: r.value };
-    });
-
     return NextResponse.json(
-      { id: tracker.id, message: "Tracker created successfully", debug },
+      { id: tracker.id, message: "Tracker created successfully" },
       { status: 201 }
     );
   } catch (error) {

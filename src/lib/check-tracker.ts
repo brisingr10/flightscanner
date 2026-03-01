@@ -28,11 +28,7 @@ export async function checkSingleTracker(tracker: Tracker) {
   });
 
   if (flights.length === 0) {
-    return {
-      trackerId: tracker.id,
-      status: "no_flights_found" as const,
-      _debug: (flights as unknown as { _debug?: unknown })._debug,
-    };
+    return { trackerId: tracker.id, status: "no_flights_found" as const };
   }
 
   // Store flight results

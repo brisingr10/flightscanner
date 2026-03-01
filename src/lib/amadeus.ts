@@ -85,37 +85,13 @@ export async function searchFlights(params: {
         result.value.result?.dictionaries
       );
       allOffers.push(...offers);
-    } else {
-      console.error("[searchFlights] rejected:", result.reason?.description ?? result.reason?.message ?? result.reason);
     }
   }
 
-  if (allOffers.length === 0 && results.length > 0) {
-    const sample = results[0];
-    console.error("[searchFlights] all failed. datePairs:", datePairs.length,
-      "sample:", sample.status === "rejected" ? sample.reason?.description ?? String(sample.reason) : "fulfilled but empty");
-  }
-
   // Sort by price and return top N
-  const sorted = allOffers
+  return allOffers
     .sort((a, b) => a.price - b.price)
     .slice(0, maxResults);
-
-  // Attach debug info for troubleshooting empty results
-  (sorted as FlightOffer[] & { _debug?: unknown })._debug = {
-    datePairs: datePairs.length,
-    fulfilled: results.filter(r => r.status === "fulfilled").length,
-    rejected: results.filter(r => r.status === "rejected").length,
-    rejectionSamples: results
-      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-      .slice(0, 2)
-      .map(r => String(r.reason?.description ?? r.reason?.message ?? r.reason)),
-    inputDates: { departStart: params.departStart, departEnd: params.departEnd, returnStart: params.returnStart, returnEnd: params.returnEnd },
-    departDates,
-    returnDates,
-  };
-
-  return sorted;
 }
 
 function parseFlightOffers(
