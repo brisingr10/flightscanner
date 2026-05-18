@@ -35,6 +35,13 @@ function statusLabel(status: string): string {
   return "조회 실패";
 }
 
+function fmtMonthDay(d: Date): string {
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const m = String(kst.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(kst.getUTCDate()).padStart(2, "0");
+  return `${m}-${day}`;
+}
+
 export function OptionsUpdateEmail({
   options,
   apiCallsThisMonth,
@@ -99,6 +106,35 @@ export function OptionsUpdateEmail({
                 ))}
 
                 {opt.note && <Text style={noteStyle}>⚠ {opt.note}</Text>}
+
+                {opt.history.length > 1 && (
+                  <>
+                    <Text style={historyHeader}>가격 추이 (최근 {opt.history.length}회)</Text>
+                    {opt.history.map((point, i) => {
+                      const prev = opt.history[i + 1];
+                      const diff =
+                        prev && point.totalPriceKrw !== null && prev.totalPriceKrw !== null
+                          ? point.totalPriceKrw - prev.totalPriceKrw
+                          : null;
+                      const diffStr =
+                        diff === null
+                          ? ""
+                          : diff === 0
+                          ? " (-)"
+                          : ` (${diff > 0 ? "+" : ""}${diff.toLocaleString("ko-KR")})`;
+                      return (
+                        <Text key={i} style={historyLine}>
+                          <span style={historyDate}>{fmtMonthDay(point.checkedAt)}</span>{" "}
+                          {fmtKrw(point.totalPriceKrw)}
+                          {!point.isComplete && (
+                            <span style={historyIncomplete}> (일부 미오픈)</span>
+                          )}
+                          <span style={historyDiff}>{diffStr}</span>
+                        </Text>
+                      );
+                    })}
+                  </>
+                )}
 
                 <Text style={footerInfo}>
                   D-{opt.daysUntilExpiry}: 트래커 만료까지 {opt.daysUntilExpiry}일
@@ -209,6 +245,37 @@ const noteStyle = {
   padding: "8px",
   borderRadius: "4px",
   margin: "12px 0 8px",
+};
+
+const historyHeader = {
+  fontSize: "11px",
+  fontWeight: "600",
+  color: "#555",
+  margin: "12px 0 4px",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.5px",
+};
+
+const historyLine = {
+  fontSize: "12px",
+  color: "#444",
+  margin: "2px 0",
+  fontFamily: "ui-monospace, Menlo, Consolas, monospace",
+};
+
+const historyDate = {
+  color: "#888",
+  marginRight: "8px",
+};
+
+const historyDiff = {
+  color: "#888",
+  fontSize: "11px",
+};
+
+const historyIncomplete = {
+  color: "#c80",
+  fontSize: "11px",
 };
 
 const footerInfo = {

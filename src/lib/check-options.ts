@@ -14,6 +14,12 @@ export interface LegOutput {
   result: LegResult;
 }
 
+export interface HistoryPoint {
+  checkedAt: Date;
+  totalPriceKrw: number | null;
+  isComplete: boolean;
+}
+
 export interface OptionOutput {
   trackerId: string;
   name: string;
@@ -26,7 +32,10 @@ export interface OptionOutput {
   previousTotalPriceKrw: number | null;
   diffVsYesterday: number | null;
   legs: LegOutput[];
+  history: HistoryPoint[];
 }
+
+const HISTORY_DAYS = 7;
 
 function startOfMonthUtc(): Date {
   const now = new Date();
@@ -163,6 +172,17 @@ export async function checkAllOptions(): Promise<{
       );
     }
 
+    const recent = await db
+      .select({
+        checkedAt: priceSnapshots.checkedAt,
+        totalPriceKrw: priceSnapshots.totalPriceKrw,
+        isComplete: priceSnapshots.isComplete,
+      })
+      .from(priceSnapshots)
+      .where(eq(priceSnapshots.trackerId, tracker.id))
+      .orderBy(desc(priceSnapshots.checkedAt))
+      .limit(HISTORY_DAYS);
+
     options.push({
       trackerId: tracker.id,
       name: tracker.name,
@@ -175,6 +195,7 @@ export async function checkAllOptions(): Promise<{
       previousTotalPriceKrw,
       diffVsYesterday,
       legs: legOutputs,
+      history: recent,
     });
   }
 

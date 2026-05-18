@@ -23,7 +23,10 @@ interface SerpApiResponse {
   best_flights?: SerpApiFlight[];
   other_flights?: SerpApiFlight[];
   error?: string;
-  search_metadata?: { status?: string };
+  search_metadata?: {
+    status?: string;
+    google_flights_url?: string;
+  };
 }
 
 function legKey(leg: LegQuery): string {
@@ -45,7 +48,10 @@ function buildSerpApiUrl(leg: LegQuery, apiKey: string): string {
 }
 
 function buildGoogleFlightsUrl(leg: LegQuery): string {
-  return `https://www.google.com/travel/flights?q=Flights%20from%20${leg.from}%20to%20${leg.to}%20on%20${leg.date}`;
+  // Fallback only. Google parses `q=` heuristically and often picks round-trip.
+  // We prefer search_metadata.google_flights_url from SerpAPI which is the
+  // exact one-way URL SerpAPI used.
+  return `https://www.google.com/travel/flights?q=One-way%20flight%20from%20${leg.from}%20to%20${leg.to}%20on%20${leg.date}`;
 }
 
 function airlinesOf(flight: SerpApiFlight): string[] {
@@ -72,42 +78,34 @@ async function searchOneWayRaw(leg: LegQuery): Promise<LegResult> {
   try {
     const res = await fetch(buildSerpApiUrl(leg, apiKey));
     const data: SerpApiResponse = await res.json();
+    const searchUrl =
+      data.search_metadata?.google_flights_url ?? buildGoogleFlightsUrl(leg);
 
     if (data.error || data.search_metadata?.status === "Error") {
       return {
         status: "error",
         priceKrw: null,
         airline: null,
-        searchUrl: buildGoogleFlightsUrl(leg),
+        searchUrl,
         errorMessage: data.error ?? "SerpAPI error",
       };
     }
 
     const all = [...(data.best_flights ?? []), ...(data.other_flights ?? [])];
     if (all.length === 0) {
-      return {
-        status: "no_results",
-        priceKrw: null,
-        airline: null,
-        searchUrl: buildGoogleFlightsUrl(leg),
-      };
+      return { status: "no_results", priceKrw: null, airline: null, searchUrl };
     }
 
     const cheapest = pickCheapest(all);
     if (!cheapest || typeof cheapest.price !== "number") {
-      return {
-        status: "no_results",
-        priceKrw: null,
-        airline: null,
-        searchUrl: buildGoogleFlightsUrl(leg),
-      };
+      return { status: "no_results", priceKrw: null, airline: null, searchUrl };
     }
 
     return {
       status: "ok",
       priceKrw: Math.round(cheapest.price),
       airline: airlinesOf(cheapest).join("+") || null,
-      searchUrl: buildGoogleFlightsUrl(leg),
+      searchUrl,
     };
   } catch (e) {
     return {
