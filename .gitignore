@@ -43,3 +43,9 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# external AI tool state
+.omc/
+
+# autoplan restore points (transient)
+tasks/todo.autoplan-restore-*.md

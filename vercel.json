@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/cron/check-flights?batch=1",
+      "path": "/api/cron/check-options",
       "schedule": "0 0 * * *"
     }
   ]

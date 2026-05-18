@@ -7,73 +7,69 @@ import {
   integer,
   boolean,
   timestamp,
-  decimal,
   text,
-  jsonb,
   index,
 } from "drizzle-orm/pg-core";
 
-export const trackers = pgTable(
-  "trackers",
+export const optionTrackers = pgTable(
+  "option_trackers",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: varchar("id", { length: 64 }).primaryKey(),
+    name: varchar("name", { length: 200 }).notNull(),
     email: varchar("email", { length: 255 }).notNull(),
-    origin: char("origin", { length: 3 }).notNull(),
-    destination: char("destination", { length: 3 }).notNull(),
-    departStart: date("depart_start").notNull(),
-    departEnd: date("depart_end").notNull(),
-    returnStart: date("return_start").notNull(),
-    returnEnd: date("return_end").notNull(),
-    adults: integer("adults").notNull().default(1),
-    isActive: boolean("is_active").notNull().default(true),
-    unsubscribeToken: varchar("unsubscribe_token", { length: 64 })
-      .notNull()
-      .unique(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expectedPriceKrw: integer("expected_price_krw"),
+    note: text("note"),
+    startedAt: timestamp("started_at").defaultNow().notNull(),
     expiresAt: timestamp("expires_at").notNull(),
-    lastCheckedAt: timestamp("last_checked_at"),
-    lastEmailedAt: timestamp("last_emailed_at"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [
-    index("idx_trackers_email").on(table.email),
-    index("idx_trackers_active").on(table.isActive, table.lastCheckedAt),
-  ]
+  (table) => [index("idx_option_trackers_active").on(table.active, table.expiresAt)]
 );
 
-export const flightResults = pgTable(
-  "flight_results",
+export const legs = pgTable(
+  "legs",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    trackerId: uuid("tracker_id")
+    trackerId: varchar("tracker_id", { length: 64 })
       .notNull()
-      .references(() => trackers.id, { onDelete: "cascade" }),
+      .references(() => optionTrackers.id, { onDelete: "cascade" }),
+    legIndex: integer("leg_index").notNull(),
+    fromIata: char("from_iata", { length: 3 }).notNull(),
+    toIata: char("to_iata", { length: 3 }).notNull(),
+    flightDate: date("flight_date").notNull(),
+    airlinePref: varchar("airline_pref", { length: 100 }),
+  },
+  (table) => [index("idx_legs_tracker").on(table.trackerId, table.legIndex)]
+);
+
+export const priceSnapshots = pgTable(
+  "price_snapshots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    trackerId: varchar("tracker_id", { length: 64 })
+      .notNull()
+      .references(() => optionTrackers.id, { onDelete: "cascade" }),
     checkedAt: timestamp("checked_at").defaultNow().notNull(),
-    departureDate: date("departure_date").notNull(),
-    returnDate: date("return_date").notNull(),
+    totalPriceKrw: integer("total_price_krw"),
+    isComplete: boolean("is_complete").notNull().default(false),
+    apiCallsUsed: integer("api_calls_used"),
+  },
+  (table) => [index("idx_snapshots_tracker_time").on(table.trackerId, table.checkedAt)]
+);
+
+export const legPrices = pgTable(
+  "leg_prices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    snapshotId: uuid("snapshot_id")
+      .notNull()
+      .references(() => priceSnapshots.id, { onDelete: "cascade" }),
+    legIndex: integer("leg_index").notNull(),
+    priceKrw: integer("price_krw"),
     airline: varchar("airline", { length: 100 }),
-    price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-    currency: char("currency", { length: 3 }).notNull().default("USD"),
-    bookingLink: text("booking_link"),
-    outboundSegments: jsonb("outbound_segments"),
-    returnSegments: jsonb("return_segments"),
+    status: varchar("status", { length: 20 }).notNull(),
+    searchUrl: text("search_url"),
   },
-  (table) => [
-    index("idx_flight_results_tracker").on(table.trackerId, table.checkedAt),
-  ]
-);
-
-export const priceHistory = pgTable(
-  "price_history",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    trackerId: uuid("tracker_id")
-      .notNull()
-      .references(() => trackers.id, { onDelete: "cascade" }),
-    checkedAt: timestamp("checked_at").defaultNow().notNull(),
-    lowestPrice: decimal("lowest_price", { precision: 10, scale: 2 }).notNull(),
-    currency: char("currency", { length: 3 }).notNull().default("USD"),
-  },
-  (table) => [
-    index("idx_price_history_tracker").on(table.trackerId, table.checkedAt),
-  ]
+  (table) => [index("idx_leg_prices_snapshot").on(table.snapshotId, table.legIndex)]
 );
