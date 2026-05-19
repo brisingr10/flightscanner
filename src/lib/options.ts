@@ -51,6 +51,7 @@ export const OPTIONS: OptionDef[] = [
 
 export const TRACKER_LIFESPAN_DAYS = 14;
 
-export const ALERT_EMAIL = process.env.ALERT_EMAIL?.trim() ?? "erryiuc10@gmail.com";
+export const ALERT_EMAIL =
+  process.env.ALERT_EMAIL?.trim() ?? "erryiuc10@gmail.com,hykoo89@gmail.com";
 
 export const SERPAPI_MONTHLY_QUOTA = 100;

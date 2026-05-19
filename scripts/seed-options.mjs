@@ -48,7 +48,8 @@ const OPTIONS = [
 ];
 
 const LIFESPAN_DAYS = 14;
-const EMAIL = process.env.ALERT_EMAIL?.trim() ?? "erryiuc10@gmail.com";
+const EMAIL =
+  process.env.ALERT_EMAIL?.trim() ?? "erryiuc10@gmail.com,hykoo89@gmail.com";
 
 const sql = neon(process.env.DATABASE_URL);
 

@@ -53,10 +53,14 @@ export async function sendOptionsUpdate(params: {
   monthlyQuota: number;
 }): Promise<void> {
   const { to, options, apiCallsThisMonth, monthlyQuota } = params;
+  const recipients = to
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 
   const { error } = await getResend().emails.send({
     from: EMAIL_FROM,
-    to,
+    to: recipients,
     subject: buildSubject(options),
     react: OptionsUpdateEmail({
       options,
