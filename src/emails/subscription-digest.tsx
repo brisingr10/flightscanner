@@ -17,6 +17,15 @@ interface SubscriptionDigestEmailProps {
   checkedAtKst: string;
 }
 
+function fmtDate(value: Date | string | null): string {
+  if (!value) return "";
+  if (typeof value === "string") return value.slice(0, 10);
+  const y = value.getUTCFullYear();
+  const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(value.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function fmtKrw(value: number | null): string {
   if (value === null) return "Price unavailable";
   return `KRW ${value.toLocaleString("ko-KR")}`;
@@ -82,10 +91,10 @@ export function SubscriptionDigestEmail({
               Route: {subscription.originIata} to {subscription.destinationIata}
             </Text>
             <Text style={heroLine}>
-              Departure window: {subscription.departureStart} to {subscription.departureEnd}
+              Departure window: {fmtDate(subscription.departureStart)} to {fmtDate(subscription.departureEnd)}
             </Text>
             <Text style={heroLine}>
-              Return window: {subscription.returnStart} to {subscription.returnEnd}
+              Return window: {fmtDate(subscription.returnStart)} to {fmtDate(subscription.returnEnd)}
             </Text>
             <Text style={heroLine}>Subscription ends in {digest.daysRemaining} day(s).</Text>
           </Section>
@@ -107,6 +116,14 @@ export function SubscriptionDigestEmail({
           </Text>
           <Text style={footerText}>
             Rankings are based on the cheapest fare found for each individual date in your selected range.
+          </Text>
+          <Text style={footerText}>
+            <Link
+              href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://flightscanner.vercel.app"}/api/subscriptions/${digest.subscription.id}/unsubscribe`}
+              style={linkStyle}
+            >
+              구독 취소하기
+            </Link>
           </Text>
         </Container>
       </Body>

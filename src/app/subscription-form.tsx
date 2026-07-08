@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { AirportAutocomplete } from "@/components/airport-autocomplete";
 
 type FormState = {
   email: string;
@@ -21,6 +22,16 @@ const initialState: FormState = {
   returnStart: "",
   returnEnd: "",
 };
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function FieldLabel({
   title,
@@ -51,6 +62,18 @@ export function SubscriptionForm() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  const today = useMemo(() => todayStr(), []);
+
+  const departureEndMin = form.departureStart || undefined;
+  const departureEndMax = form.departureStart
+    ? addDays(form.departureStart, 6)
+    : undefined;
+
+  const returnEndMin = form.returnStart || undefined;
+  const returnEndMax = form.returnStart
+    ? addDays(form.returnStart, 6)
+    : undefined;
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -73,16 +96,12 @@ export function SubscriptionForm() {
 
       setSuccess(
         payload.initialEmailSent
-          ? `${payload.subscription.email}로 첫 메일을 바로 보냈습니다. ${new Date(
+          ? `${payload.subscription.email}로 첫 메일을 보냈습니다. ${new Date(
               payload.subscription.expiresAt
             )
               .toISOString()
-              .slice(0, 10)}까지 매일 오전 9시에 계속 보내드릴게요.`
-          : `${payload.subscription.email}로 알림을 등록했습니다. 첫 메일 전송은 완료되지 않았지만 ${new Date(
-              payload.subscription.expiresAt
-            )
-              .toISOString()
-              .slice(0, 10)}까지 매일 오전 9시에 계속 시도합니다.`
+              .slice(0, 10)}까지 매일 아침 9시에 보내드릴게요.`
+          : `${payload.subscription.email}로 알림을 등록했습니다.`
       );
       setForm(initialState);
     } catch (submitError) {
@@ -109,69 +128,75 @@ export function SubscriptionForm() {
         />
       </div>
 
+      <hr className="border-t border-[rgba(206,193,175,0.3)]" />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-[1.4rem] border border-[rgba(206,193,175,0.75)] bg-white/80 p-4">
           <FieldLabel title="출발지" hint="IATA 3자리" htmlFor="origin" />
-          <input
+          <AirportAutocomplete
             id="origin"
-            type="text"
-            required
-            maxLength={3}
             value={form.origin}
-            onChange={(event) => updateField("origin", event.target.value.toUpperCase())}
-            className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm uppercase text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-faint)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+            onChange={(code) => updateField("origin", code)}
             placeholder="ICN"
           />
         </div>
 
         <div className="rounded-[1.4rem] border border-[rgba(206,193,175,0.75)] bg-white/80 p-4">
           <FieldLabel title="도착지" hint="IATA 3자리" htmlFor="destination" />
-          <input
+          <AirportAutocomplete
             id="destination"
-            type="text"
-            required
-            maxLength={3}
             value={form.destination}
-            onChange={(event) =>
-              updateField("destination", event.target.value.toUpperCase())
-            }
-            className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm uppercase text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-faint)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+            onChange={(code) => updateField("destination", code)}
             placeholder="NRT"
           />
         </div>
       </div>
+
+      <hr className="border-t border-[rgba(206,193,175,0.3)]" />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <section className="rounded-[1.6rem] border border-[rgba(206,193,175,0.75)] bg-[rgba(255,252,247,0.9)] p-4">
           <div className="mb-4">
             <p className="text-sm font-semibold text-[var(--ink)]">출발일 범위</p>
             <p className="mt-1 text-xs leading-5 text-[var(--ink-muted)]">
-              최대 7일까지 선택할 수 있습니다. 가장 싼 출발일 Top 5를 보내드립니다.
+              최대 7일, Top 5 추천
             </p>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <FieldLabel title="시작일" htmlFor="departureStart" />
               <input
                 id="departureStart"
                 type="date"
                 required
+                min={today}
                 value={form.departureStart}
-                onChange={(event) => updateField("departureStart", event.target.value)}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+                onChange={(event) => {
+                  updateField("departureStart", event.target.value);
+                  // Clear end if it falls outside the new range
+                  if (form.departureEnd && event.target.value) {
+                    const max = addDays(event.target.value, 7);
+                    if (form.departureEnd > max) {
+                      updateField("departureEnd", "");
+                    }
+                  }
+                }}
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
               />
             </div>
-
             <div>
               <FieldLabel title="종료일" htmlFor="departureEnd" />
               <input
                 id="departureEnd"
                 type="date"
                 required
+                disabled={!form.departureStart}
+                min={departureEndMin}
+                max={departureEndMax}
                 value={form.departureEnd}
                 onChange={(event) => updateField("departureEnd", event.target.value)}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
               />
             </div>
           </div>
@@ -181,32 +206,43 @@ export function SubscriptionForm() {
           <div className="mb-4">
             <p className="text-sm font-semibold text-[var(--ink)]">귀국일 범위</p>
             <p className="mt-1 text-xs leading-5 text-[var(--ink-muted)]">
-              귀국일도 따로 정렬합니다. 돌아오는 날짜를 넓게 볼 때 유용합니다.
+              귀국일도 별도 정렬
             </p>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <FieldLabel title="시작일" htmlFor="returnStart" />
               <input
                 id="returnStart"
                 type="date"
                 required
+                min={today}
                 value={form.returnStart}
-                onChange={(event) => updateField("returnStart", event.target.value)}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+                onChange={(event) => {
+                  updateField("returnStart", event.target.value);
+                  if (form.returnEnd && event.target.value) {
+                    const max = addDays(event.target.value, 7);
+                    if (form.returnEnd > max) {
+                      updateField("returnEnd", "");
+                    }
+                  }
+                }}
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
               />
             </div>
-
             <div>
               <FieldLabel title="종료일" htmlFor="returnEnd" />
               <input
                 id="returnEnd"
                 type="date"
                 required
+                disabled={!form.returnStart}
+                min={returnEndMin}
+                max={returnEndMax}
                 value={form.returnEnd}
                 onChange={(event) => updateField("returnEnd", event.target.value)}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
               />
             </div>
           </div>
@@ -214,27 +250,36 @@ export function SubscriptionForm() {
       </div>
 
       {error ? (
-        <p className="rounded-2xl border border-[rgba(210,96,84,0.24)] bg-[rgba(255,239,236,0.94)] px-4 py-3 text-sm leading-6 text-[rgb(148,47,32)]">
-          {error}
-        </p>
+        <div className="flex gap-3 rounded-2xl border border-[rgba(210,96,84,0.24)] bg-[rgba(255,239,236,0.94)] px-4 py-3 text-sm leading-6 text-[rgb(148,47,32)]">
+          <span className="mt-0.5 shrink-0">⚠️</span>
+          <span>{error}</span>
+        </div>
       ) : null}
 
       {success ? (
-        <p className="rounded-2xl border border-[rgba(43,128,109,0.22)] bg-[rgba(236,250,245,0.96)] px-4 py-3 text-sm leading-6 text-[rgb(28,99,83)]">
-          {success}
-        </p>
+        <div className="flex gap-3 rounded-2xl border border-[rgba(43,128,109,0.22)] bg-[rgba(236,250,245,0.96)] px-4 py-3 text-sm leading-6 text-[rgb(28,99,83)]">
+          <span className="mt-0.5 shrink-0">✅</span>
+          <span>{success}</span>
+        </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-5 text-[var(--ink-muted)]">
-          등록 후 14일 동안 매일 오전 9시에 메일이 발송됩니다.
+          7일간 매일 오전 9시 발송
         </p>
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-w-[13rem] items-center justify-center rounded-full bg-[linear-gradient(135deg,_var(--accent),_var(--accent-deep))] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(196,95,38,0.24)] transition hover:translate-y-[-1px] hover:shadow-[0_22px_40px_rgba(196,95,38,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-w-[13rem] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,_var(--accent),_var(--accent-deep))] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(196,95,38,0.24)] transition hover:translate-y-[-1px] hover:shadow-[0_22px_40px_rgba(196,95,38,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending ? "등록하는 중..." : "이 일정으로 매일 받아보기"}
+          {pending ? (
+            <>
+              <span className="inline-block h-4 w-4 animate-[spin_0.8s_linear_infinite] rounded-full border-2 border-white/30 border-t-white" />
+              등록 중...
+            </>
+          ) : (
+            "매일 받아보기"
+          )}
         </button>
       </div>
     </form>

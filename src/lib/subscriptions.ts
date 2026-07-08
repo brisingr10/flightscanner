@@ -8,7 +8,7 @@ import { sendSubscriptionDigest } from "./email";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const MAX_RANGE_DAYS = 7;
-export const SUBSCRIPTION_LIFESPAN_DAYS = 14;
+export const SUBSCRIPTION_LIFESPAN_DAYS = 7;
 
 export interface SubscriptionInput {
   email: string;

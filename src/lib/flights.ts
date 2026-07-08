@@ -36,7 +36,7 @@ function legKey(leg: LegQuery): string {
 function buildSerpApiUrl(leg: LegQuery, apiKey: string): string {
   const url = new URL("https://serpapi.com/search.json");
   url.searchParams.set("engine", "google_flights");
-  url.searchParams.set("type", "2");
+  url.searchParams.set("type", "1");
   url.searchParams.set("departure_id", leg.from);
   url.searchParams.set("arrival_id", leg.to);
   url.searchParams.set("outbound_date", leg.date);
