@@ -1,17 +1,19 @@
 import { Resend } from "resend";
 import { OptionsUpdateEmail } from "@/emails/options-update";
+import { SubscriptionDigestEmail } from "@/emails/subscription-digest";
 import type { OptionOutput } from "./check-options";
+import type { SubscriptionDigest } from "./subscriptions";
 
-let _resend: Resend | null = null;
+let resendClient: Resend | null = null;
 
 function getResend(): Resend {
-  if (!_resend) {
+  if (!resendClient) {
     if (!process.env.RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY environment variable is not set");
     }
-    _resend = new Resend(process.env.RESEND_API_KEY);
+    resendClient = new Resend(process.env.RESEND_API_KEY);
   }
-  return _resend;
+  return resendClient;
 }
 
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "FlightScanner <onboarding@resend.dev>";
@@ -27,23 +29,18 @@ function formatKstNow(): string {
   return `${y}-${m}-${d} ${hh}:${mm} KST`;
 }
 
-function buildSubject(options: OptionOutput[]): string {
+function buildOptionsSubject(options: OptionOutput[]): string {
   const cheapest = options
-    .filter((o) => o.totalPriceKrw !== null)
+    .filter((option) => option.totalPriceKrw !== null)
     .sort((a, b) => (a.totalPriceKrw ?? 0) - (b.totalPriceKrw ?? 0))[0];
 
-  if (!cheapest || cheapest.totalPriceKrw === null) {
-    return "오늘의 항공권 옵션 — 일부 leg 미오픈";
+  if (!cheapest?.totalPriceKrw) {
+    return "[FlightScanner] Daily options update";
   }
 
-  const priceStr = "₩" + cheapest.totalPriceKrw.toLocaleString("ko-KR");
-  const drops = options.filter(
-    (o) => o.diffVsYesterday !== null && o.diffVsYesterday < -10_000
-  );
-  if (drops.length > 0) {
-    return `📉 가격 하락! 최저 ${priceStr}부터`;
-  }
-  return `오늘의 항공권 옵션 — 최저 ${priceStr}부터`;
+  return `[FlightScanner] Cheapest tracked option KRW ${cheapest.totalPriceKrw.toLocaleString(
+    "ko-KR"
+  )}`;
 }
 
 export async function sendOptionsUpdate(params: {
@@ -55,13 +52,13 @@ export async function sendOptionsUpdate(params: {
   const { to, options, apiCallsThisMonth, monthlyQuota } = params;
   const recipients = to
     .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 
   const { error } = await getResend().emails.send({
     from: EMAIL_FROM,
     to: recipients,
-    subject: buildSubject(options),
+    subject: buildOptionsSubject(options),
     react: OptionsUpdateEmail({
       options,
       apiCallsThisMonth,
@@ -72,6 +69,56 @@ export async function sendOptionsUpdate(params: {
 
   if (error) {
     console.error("Failed to send options update email:", error);
+    throw new Error(`Email send failed: ${error.message}`);
+  }
+}
+
+function buildDigestSubject(digest: SubscriptionDigest): string {
+  const bestOutbound = digest.outbound.topOptions.find(
+    (option) => option.result.status === "ok" && option.result.priceKrw !== null
+  );
+  const bestInbound = digest.inbound.topOptions.find(
+    (option) => option.result.status === "ok" && option.result.priceKrw !== null
+  );
+
+  const route = `${digest.subscription.originIata}-${digest.subscription.destinationIata}`;
+  if (!bestOutbound && !bestInbound) {
+    return `[FlightScanner] ${route} daily update`;
+  }
+
+  const parts: string[] = [];
+  if (bestOutbound?.result.priceKrw) {
+    parts.push(`out ${bestOutbound.result.priceKrw.toLocaleString("ko-KR")}`);
+  }
+  if (bestInbound?.result.priceKrw) {
+    parts.push(`return ${bestInbound.result.priceKrw.toLocaleString("ko-KR")}`);
+  }
+
+  return `[FlightScanner] ${route} ${parts.join(" / ")}`;
+}
+
+export async function sendSubscriptionDigest(params: {
+  to: string;
+  digest: SubscriptionDigest;
+  apiCallsThisMonth: number;
+  monthlyQuota: number;
+}): Promise<void> {
+  const { to, digest, apiCallsThisMonth, monthlyQuota } = params;
+
+  const { error } = await getResend().emails.send({
+    from: EMAIL_FROM,
+    to: [to],
+    subject: buildDigestSubject(digest),
+    react: SubscriptionDigestEmail({
+      digest,
+      apiCallsThisMonth,
+      monthlyQuota,
+      checkedAtKst: formatKstNow(),
+    }),
+  });
+
+  if (error) {
+    console.error("Failed to send subscription digest:", error);
     throw new Error(`Email send failed: ${error.message}`);
   }
 }

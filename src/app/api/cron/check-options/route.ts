@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAllOptions } from "@/lib/check-options";
+import { checkAllSubscriptions } from "@/lib/subscriptions";
 
 export const maxDuration = 60;
 
@@ -12,20 +12,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { options, apiCallsThisMonth, monthlyQuota } = await checkAllOptions();
-    return NextResponse.json({
-      ok: true,
-      optionsChecked: options.length,
-      apiCallsThisMonth,
-      monthlyQuota,
-      summary: options.map((o) => ({
-        id: o.trackerId,
-        name: o.name,
-        totalPriceKrw: o.totalPriceKrw,
-        isComplete: o.isComplete,
-        diffVsYesterday: o.diffVsYesterday,
-      })),
-    });
+    const result = await checkAllSubscriptions();
+    const status =
+      result.emailFailures > 0 && result.emailsSent === 0
+        ? 500
+        : 200;
+
+    return NextResponse.json(
+      {
+        ok: status === 200,
+        subscriptionsProcessed: result.subscriptionsProcessed,
+        emailsSent: result.emailsSent,
+        emailFailures: result.emailFailures,
+        apiCallsUsed: result.apiCallsUsed,
+        apiCallsThisMonth: result.apiCallsThisMonth,
+        monthlyQuota: result.monthlyQuota,
+      },
+      { status }
+    );
   } catch (error) {
     console.error("Cron check-options failed:", error);
     return NextResponse.json(
