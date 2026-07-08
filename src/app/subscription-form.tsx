@@ -69,7 +69,17 @@ export function SubscriptionForm() {
     ? addDays(form.departureStart, 6)
     : undefined;
 
-  const returnEndMin = form.returnStart || undefined;
+  const returnStartMin = form.departureStart
+    ? form.departureStart > today
+      ? form.departureStart
+      : today
+    : undefined;
+
+  const returnEndMin = form.returnStart
+    ? form.departureEnd && form.departureEnd > form.returnStart
+      ? form.departureEnd
+      : form.returnStart
+    : undefined;
   const returnEndMax = form.returnStart
     ? addDays(form.returnStart, 6)
     : undefined;
@@ -123,7 +133,7 @@ export function SubscriptionForm() {
           required
           value={form.email}
           onChange={(event) => updateField("email", event.target.value)}
-          className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-faint)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+          className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-4 py-3.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-faint)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
           placeholder="you@example.com"
         />
       </div>
@@ -174,15 +184,20 @@ export function SubscriptionForm() {
                 value={form.departureStart}
                 onChange={(event) => {
                   updateField("departureStart", event.target.value);
-                  // Clear end if it falls outside the new range
+                  // Clear departureEnd if it falls outside the new range
                   if (form.departureEnd && event.target.value) {
-                    const max = addDays(event.target.value, 7);
+                    const max = addDays(event.target.value, 6);
                     if (form.departureEnd > max) {
                       updateField("departureEnd", "");
                     }
                   }
+                  // Clear returnStart if it's now before departureStart
+                  if (form.returnStart && event.target.value && form.returnStart < event.target.value) {
+                    updateField("returnStart", "");
+                    updateField("returnEnd", "");
+                  }
                 }}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-5 py-3.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
               />
             </div>
             <div>
@@ -195,8 +210,14 @@ export function SubscriptionForm() {
                 min={departureEndMin}
                 max={departureEndMax}
                 value={form.departureEnd}
-                onChange={(event) => updateField("departureEnd", event.target.value)}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
+                onChange={(event) => {
+                  updateField("departureEnd", event.target.value);
+                  // Clear returnEnd if it's now before departureEnd
+                  if (form.returnEnd && event.target.value && form.returnEnd < event.target.value) {
+                    updateField("returnEnd", "");
+                  }
+                }}
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-5 py-3.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
               />
             </div>
           </div>
@@ -217,18 +238,19 @@ export function SubscriptionForm() {
                 id="returnStart"
                 type="date"
                 required
-                min={today}
+                disabled={!form.departureStart}
+                min={returnStartMin}
                 value={form.returnStart}
                 onChange={(event) => {
                   updateField("returnStart", event.target.value);
                   if (form.returnEnd && event.target.value) {
-                    const max = addDays(event.target.value, 7);
+                    const max = addDays(event.target.value, 6);
                     if (form.returnEnd > max) {
                       updateField("returnEnd", "");
                     }
                   }
                 }}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)]"
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-5 py-3.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
               />
             </div>
             <div>
@@ -237,12 +259,12 @@ export function SubscriptionForm() {
                 id="returnEnd"
                 type="date"
                 required
-                disabled={!form.returnStart}
+                disabled={!form.departureEnd || !form.returnStart}
                 min={returnEndMin}
                 max={returnEndMax}
                 value={form.returnEnd}
                 onChange={(event) => updateField("returnEnd", event.target.value)}
-                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
+                className="w-full rounded-2xl border border-[rgba(184,168,146,0.58)] bg-white px-5 py-3.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[rgba(230,123,62,0.12)] disabled:cursor-not-allowed disabled:opacity-40"
               />
             </div>
           </div>
@@ -250,14 +272,14 @@ export function SubscriptionForm() {
       </div>
 
       {error ? (
-        <div className="flex gap-3 rounded-2xl border border-[rgba(210,96,84,0.24)] bg-[rgba(255,239,236,0.94)] px-4 py-3 text-sm leading-6 text-[rgb(148,47,32)]">
+        <div className="flex gap-3 rounded-2xl border border-[rgba(210,96,84,0.24)] bg-[rgba(255,239,236,0.94)] px-4 py-3.5 text-sm leading-6 text-[rgb(148,47,32)]">
           <span className="mt-0.5 shrink-0">⚠️</span>
           <span>{error}</span>
         </div>
       ) : null}
 
       {success ? (
-        <div className="flex gap-3 rounded-2xl border border-[rgba(43,128,109,0.22)] bg-[rgba(236,250,245,0.96)] px-4 py-3 text-sm leading-6 text-[rgb(28,99,83)]">
+        <div className="flex gap-3 rounded-2xl border border-[rgba(43,128,109,0.22)] bg-[rgba(236,250,245,0.96)] px-4 py-3.5 text-sm leading-6 text-[rgb(28,99,83)]">
           <span className="mt-0.5 shrink-0">✅</span>
           <span>{success}</span>
         </div>

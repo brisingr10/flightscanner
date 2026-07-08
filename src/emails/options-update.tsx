@@ -10,8 +10,6 @@ import type { OptionOutput } from "@/lib/check-options";
 
 interface OptionsUpdateEmailProps {
   options: OptionOutput[];
-  apiCallsThisMonth: number;
-  monthlyQuota: number;
   checkedAtKst: string;
 }
 
@@ -22,8 +20,6 @@ function fmtKrw(value: number | null): string {
 
 export function OptionsUpdateEmail({
   options,
-  apiCallsThisMonth,
-  monthlyQuota,
   checkedAtKst,
 }: OptionsUpdateEmailProps) {
   return (
@@ -48,9 +44,6 @@ export function OptionsUpdateEmail({
             </Section>
           ))}
 
-          <Text style={footer}>
-            SerpAPI usage this month: {apiCallsThisMonth} / {monthlyQuota}
-          </Text>
         </Container>
       </Body>
     </Html>
@@ -100,10 +93,4 @@ const line = {
   color: "#374151",
   fontSize: "13px",
   margin: "4px 0",
-};
-
-const footer = {
-  color: "#6b7280",
-  fontSize: "12px",
-  margin: "16px 0 0",
 };

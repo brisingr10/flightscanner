@@ -12,8 +12,6 @@ import type { RankedRangeSummary, SubscriptionDigest } from "@/lib/subscriptions
 
 interface SubscriptionDigestEmailProps {
   digest: SubscriptionDigest;
-  apiCallsThisMonth: number;
-  monthlyQuota: number;
   checkedAtKst: string;
 }
 
@@ -72,8 +70,6 @@ function renderRange(label: string, range: RankedRangeSummary) {
 
 export function SubscriptionDigestEmail({
   digest,
-  apiCallsThisMonth,
-  monthlyQuota,
   checkedAtKst,
 }: SubscriptionDigestEmailProps) {
   const { subscription } = digest;
@@ -111,9 +107,6 @@ export function SubscriptionDigestEmail({
 
           <Hr style={hr} />
 
-          <Text style={footerText}>
-            SerpAPI usage this month: {apiCallsThisMonth} / {monthlyQuota}
-          </Text>
           <Text style={footerText}>
             Rankings are based on the cheapest fare found for each individual date in your selected range.
           </Text>

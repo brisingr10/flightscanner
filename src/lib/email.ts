@@ -46,10 +46,8 @@ function buildOptionsSubject(options: OptionOutput[]): string {
 export async function sendOptionsUpdate(params: {
   to: string;
   options: OptionOutput[];
-  apiCallsThisMonth: number;
-  monthlyQuota: number;
 }): Promise<void> {
-  const { to, options, apiCallsThisMonth, monthlyQuota } = params;
+  const { to, options } = params;
   const recipients = to
     .split(",")
     .map((value) => value.trim())
@@ -61,8 +59,6 @@ export async function sendOptionsUpdate(params: {
     subject: buildOptionsSubject(options),
     react: OptionsUpdateEmail({
       options,
-      apiCallsThisMonth,
-      monthlyQuota,
       checkedAtKst: formatKstNow(),
     }),
   });
