@@ -96,10 +96,8 @@ function buildDigestSubject(digest: SubscriptionDigest): string {
 export async function sendSubscriptionDigest(params: {
   to: string;
   digest: SubscriptionDigest;
-  apiCallsThisMonth: number;
-  monthlyQuota: number;
 }): Promise<void> {
-  const { to, digest, apiCallsThisMonth, monthlyQuota } = params;
+  const { to, digest } = params;
 
   const { error } = await getResend().emails.send({
     from: EMAIL_FROM,
@@ -107,8 +105,6 @@ export async function sendSubscriptionDigest(params: {
     subject: buildDigestSubject(digest),
     react: SubscriptionDigestEmail({
       digest,
-      apiCallsThisMonth,
-      monthlyQuota,
       checkedAtKst: formatKstNow(),
     }),
   });

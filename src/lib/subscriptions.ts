@@ -304,8 +304,6 @@ async function runSubscriptionDigests(
       await sendSubscriptionDigest({
         to: digest.subscription.email,
         digest,
-        apiCallsThisMonth,
-        monthlyQuota: SERPAPI_MONTHLY_QUOTA,
       });
       emailsSent += 1;
     } catch (error) {
