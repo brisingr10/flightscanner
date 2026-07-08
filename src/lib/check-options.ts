@@ -202,8 +202,6 @@ export async function checkAllOptions(): Promise<{
   await sendOptionsUpdate({
     to: trackers[0].email,
     options,
-    apiCallsThisMonth,
-    monthlyQuota: SERPAPI_MONTHLY_QUOTA,
   });
 
   return {
